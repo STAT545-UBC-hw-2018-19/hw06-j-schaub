@@ -1,0 +1,451 @@
+---
+title: "Homework 6"
+author: "Jessica Schaub"
+date: "October 31, 2018"
+output: 
+  github_document:
+    toc: yes
+always_allow_html: yes
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Overview
+
+This assignment has the purpose of pulling together all concepts of data wrangling that we have learned until now.
+We must select and perform two tasks from a list.
+For more information, please see the [assignment](http://stat545.com/Classroom/assignments/hw06/hw06.html).
+
+# Assignment
+
+I have selected the following two tasks:
+
+1. __Character Data__: Read the [Strings](https://r4ds.had.co.nz/strings.html) chapter of R for Data Science and complete the exercises.
+2. __Work with the Candy Data__: Explore the [2015 candy data](https://boingboing.net/2015/10/31/the-candy-hierarchy-2015-your.html) from Cohen & Ng.
+
+## Getting Ready
+
+Loading the requires packages for the tasks.
+
+```{r}
+#tidyverse
+suppressPackageStartupMessages(library(tidyverse))
+#knitr
+suppressPackageStartupMessages(library(knitr))
+#stringr
+suppressPackageStartupMessages(library(stringr))
+#cowplot
+suppressPackageStartupMessages(library(cowplot))
+```
+
+
+## Task 1: Character Data
+
+### Introduction
+
+This task requires reading through the 'Strings' chapter from R for Data Science and completing the exercises at the end of each section.
+The chapter and exercises can be found [here](https://r4ds.had.co.nz/strings.html).
+
+
+The number of questions that we need to complete for this assignment was not specified, so I will select a subset of questions that will allow me to practice the various applications of regex.
+
+### String basics
+
+**1. In code that doesn’t use stringr, you’ll often see `paste()` and `paste0()`. What’s the difference between the two functions? What stringr function are they equivalent to? How do the functions differ in their handling of `NA`?**
+
+The difference is the default for `sep`.
+`paste()` has a default value `sep = " "` if nothing is specified. 
+`paste0()` has a default value `sep = ""` if nothing is specified.
+
+```{r}
+paste("Je", "ssi", "ca")
+paste0("Je", "ssi", "ca")
+```
+
+`paste()` and `paste0()` don't handle NA's well. 
+
+```{r}
+a <- c("a", NA, NA)
+b <- c("x", "y", NA)
+
+paste(a, b)
+paste0(a, b)
+```
+
+This default output of "NAy" is not a result I can imagine being useful in many situations. However, a more intuitive way to deal with NA's in paste does not really exist yet.
+
+**2. In your own words, describe the difference between the `sep` and `collapse` arguments to `str_c()`.**
+
+`str_c()` can concatenate multiple vectors together.
+`sep` controls how the elements of the different vectors are separated once they are joined.
+`collapse` controls how the final concatenated vectors will be collapsed down into one final string.
+Without `collapse`, the output will be the same length as the vectors that were input.
+With `collapse`, the length will be 1.
+
+```{r}
+#Build vectors for example
+vec1 <- c("x", "y", "z")
+vec2 <- c("a", "b", "c")
+
+#Show with sep
+#output is the same length as the longest vector
+str_c(vec1, vec2, sep = "&")
+
+#Show with sep & collapse
+#output is one string
+str_c(vec1, vec2, sep = "&", collapse = "-")
+
+```
+
+
+### Matching patterns with regular expressions
+
+**1. What patterns will the regular expression `\..\..\..` match? How would you represent it as a string?**
+
+`\` has a special meaning, so to represent them as a regular expression, we need to escape them with `\`. 
+The string would look like: `"\\..\\..\\.."`
+
+
+```{r}
+writeLines("\\..\\..\\..")
+```
+
+**2. Given the corpus of common words in `stringr::words`, create regular expressions that find all words that:**
+
+  **- Start with “y”.**
+  
+  **- End with “x”**
+  
+  **- Are exactly three letters long**
+
+```{r}
+#view words
+head(words, 10) %>% 
+  kable()
+
+#find words that begin with y
+words %>% 
+  str_view("^y", match = TRUE)
+
+#find words that end with x
+words %>% 
+  str_view("x$", match = TRUE)
+
+#find words that are only 3 letters long
+words %>% 
+  str_view("^...$", match = TRUE)
+```
+
+**3. Create regular expressions to find all words that:**
+
+  **- Start with a vowel.**
+  
+  **- That only contain consonants.**
+  
+  **- End with ed, but not with eed.**
+  
+  **- End with ing or ise.**
+  
+```{r}
+#find words that start with a vowel
+words %>% 
+  str_view("^[aeiou]", match = TRUE)
+
+#find words that only contain consonants
+words %>% 
+  str_view("^[^aeiou]+$", match = TRUE)
+
+#find words that end with "ed", but not "eed"
+words %>% 
+  str_view("[^e]ed$", match = TRUE)
+
+#find words that end with "ing" or "ise"
+words %>% 
+  str_view("ing$|ise$", match = TRUE)
+```
+
+**4. Create regular expressions to find all words that:**
+
+  **- Start with three consonants.**
+  
+  **- Have three or more vowels in a row.**
+  
+  **- Have two or more vowel-consonant pairs in a row.**
+  
+```{r}
+#find words that start with 3 consonants
+words %>% 
+  str_view("^[^aeiou]{3}", match = TRUE)
+
+#find words that have 3 or more vowels in a row
+words %>% 
+  str_view("[aeiou]{3,}", match = TRUE)
+
+#find words that have 2 or more vowel/consonant pairs in a row
+words %>% 
+  str_view("(([aeiou][^aeiou])|([^aeiou][aeiou])){2,}", match = TRUE)
+```
+
+**5. Construct regular expressions to match words that:**
+
+  **- Start and end with the same character.**
+  
+  **- Contain a repeated pair of letters (e.g. “church” contains “ch” repeated twice.)**
+  
+  **- Contain one letter repeated in at least three places (e.g. “eleven” contains three “e”s.)**
+  
+```{r}
+#find words that start and end with the same character
+words %>% 
+  str_view("^(.).+\\1$", match = TRUE)
+
+##find words that contain a repeated pair of letters
+words %>% 
+  str_view("(.)\\1", match = TRUE)
+
+##find words that contain one letter repeated in at least three places
+words %>% 
+  str_view("(.).+\\1.+\\1.+", match = TRUE)
+```
+
+
+### Tools
+
+**1. What word has the highest number of vowels? What word has the highest proportion of vowels? **
+
+```{r}
+#turn words into df
+word_df <- data.frame(words)
+
+#add columns: number of vowels, proportion of vowels
+word_df <- word_df %>% 
+  mutate(vowel_num = str_count(words, "[aeiou]"),
+         vowel_prop = str_count(words, "[aeiou]")/str_length(words)) 
+
+#Check our work
+word_df %>% 
+  head() %>% 
+  kable(col.names = c("Words", "Number of Vowels", "Porportion of Vowels"))
+  
+#find max number of vowels
+word_df %>% 
+  filter(vowel_num == max(vowel_num)) %>% 
+  kable(col.names = c("Words", "Number of Vowels", "Porportion of Vowels"))
+
+#find max proportion of vowels
+word_df %>% 
+  filter(vowel_prop == max(vowel_prop)) %>% 
+  kable(col.names = c("Words", "Number of Vowels", "Porportion of Vowels"))
+
+```
+
+
+## Task 2: Candy Data
+
+### Introduction
+
+This task requires loading the candy 2015 data from Cohen & Ng.
+An explanation of the data can be found [here](https://boingboing.net/2015/10/31/the-candy-hierarchy-2015-your.html).
+Once the data is loaded, it must be checked and cleaned for analysis. 
+This is the task I have chosen to perform, so I aim to have a data set that is ready for analysis by the end.
+
+### Load, check, and clean the data
+
+The data were downloaded online and named "candy_data_2015" in .csv format.
+
+```{r}
+#Loading candy 2015 data from csv file
+candy_all <- read_csv('candy_data_2015.csv')
+```
+
+The data has successfully been loaded to the variable `candy_all`. Let's check the data for anomalies that need to be addressed.
+
+```{r}
+# Check dimensions, variable names, and view the results
+dim(candy_all)
+names(candy_all)
+
+head(candy_all, 15) %>% 
+  kable()
+```
+
+Found issues:
+
+- 124 columns seems like a lot of variables, the data is in tidy format!
+- Variable names are long strings, we can simplify the naming for some variables (age, trick_or_treating)
+- ID's are missing for each respondent
+- Strange values for age
+
+Let's tackle these issues one at a time.
+First, we can start by giving each participant an ID number
+
+```{r}
+# insert an id for the participants
+# will be inserted at the end but will fix later 
+candy_all <- candy_all %>% 
+  mutate(id = row_number())
+```
+
+Now let's fix some of the variable names.
+
+```{r}
+# How old are you -> age
+# Timestamp -> time
+# Are you going trick or treating -> trick_or_treating
+candy_all <- candy_all %>% 
+  select(id, 
+         age = matches("old"),
+         time = matches('Time'), 
+         trick_or_treating = matches('treating'), 
+         everything())
+
+#Check our work
+candy_all %>% 
+  head(10) %>% 
+  kable()
+```
+
+Then we can fix some of the strange age values.
+
+```{r}
+#remove ages > 100 and < 1
+candy_all <- candy_all %>% 
+  filter(str_length(age) <= 2) %>% #ages values have either 1 or 2 digits only
+  mutate(age = as.integer(age)) %>% #make all ages integers
+  filter(!is.na(age)) #remove NA's
+
+#Check our work
+candy_all %>% 
+  head(10) %>% 
+  kable()
+```
+
+Finally, we can make the data untidy for our analysis. There are two types of data represented in this data set:
+
+  - Candy
+  - Questions about other things
+  
+So let's split the data frame into two data frames: `candy` & `questions`.
+Metadata for ID, age, timestamp, and trick_or_treating will be preserved between both data frames.
+
+Let's build the `candy` data frame.
+Since all candy values have square brackets around them, we can search for these. 
+However, square brackets are found in some questions and these questions all start with 'Please'. 
+We will use this to our advantage.
+
+```{r}
+# All columns with [, with the exception of questions that contain [ (these begin with 'Please')
+candy <- candy_all %>% 
+  select(id,
+         age,
+         time,
+         trick_or_treating,
+         contains('['),           #candy names, all contain []
+         -contains('Please'))     #without (-) questions that contain []
+
+#Check our work
+candy %>% 
+  names() %>% 
+  kable()
+
+```
+
+Now we have a data frame that only has metadata and candy information.
+Before we reshape the data, we can remove the unnecessary square brackets from the candy names and replace them in the `candy` data frame.
+
+```{r}
+#isolate candy names, then remove brackets
+# saved to vector 'names'
+names <- candy_all %>%
+  select(contains('['),           
+         -contains('Please')) %>% 
+  names() %>% 
+  str_replace(pattern = "\\[", replacement = "") %>% 
+  str_replace(pattern = "\\]", replacement = "")
+
+#use vector 'names' to replace existing variable names in candy data frame
+colnames(candy)[5:length(candy)] <- names
+
+#check our work
+candy %>% 
+  head(10) %>% 
+  kable()
+```
+
+
+
+Let's turn the data into untidy form.
+
+```{r}
+# Reshaping to untidy form
+# gather candy values by name under 'candy'
+# result is how they feel, 'feeling'
+candy <- candy %>% 
+  gather(key = candy, value = feeling, 5:ncol(candy))
+
+#Check our work
+candy %>% 
+  head(10) %>% 
+  kable()
+```
+
+We have successfully reshaped our candy data!
+
+Now let's build the `questions` data frame.
+
+```{r}
+# Create a vector of all candy names
+candy_names_original <- candy_all %>% 
+  select(contains('['),              #candy names, all contain []
+         -contains('Please')) %>%    #remove questions that contain []
+  names()    #extract just the names
+
+#Remove all candy names
+questions <- candy_all %>% 
+  select(-candy_names_original)
+
+#Check our work
+questions %>% 
+  names() %>% 
+  kable()
+
+```
+
+Now we can turn the `questions` data into untidy data.
+
+```{r}
+# out question statements in variable 'question' and answer in variable 'answer'
+questions <- questions %>% 
+  gather(key = question, value = answer, 5:ncol(questions))
+
+#Check our work
+questions %>% 
+  head(10) %>% 
+  kable()
+```
+
+Let's do a final check to see if the data is in the correct structure
+
+```{r}
+str(candy)
+str(questions)
+```
+
+
+Success!
+At this point, we have dealt with the candy data in the following ways:
+
+  - Added ID's for each participant
+  - Changed the names of the metadata columns for ease of use
+  - Removed strange values for age
+  - Split the all of the data into two data frames:
+    - `candy`, containing all candy data and metadata
+    - `questions`, containing all question data and metadata
+  - Removed unnecessary square brackets from candy data
+  - Reshaped the tidy data to untidy data
+  
+It would seem the data is ready to be explored!
