@@ -186,8 +186,11 @@ words %>%
   str_view("[aeiou]{3,}", match = TRUE)
 
 #find words that have 2 or more vowel/consonant pairs in a row
-words %>% 
-  str_view("(([aeiou][^aeiou])|([^aeiou][aeiou])){2,}", match = TRUE)
+##The output is very long so I have masked it
+
+#words %>% 
+#  str_view("(([aeiou][^aeiou])|([^aeiou][aeiou])){2,}#", match = TRUE)
+
 ```
 
 **5. Construct regular expressions to match words that:**
